@@ -1,12 +1,15 @@
-# Python
+# Python (covers root and subfolders)
 **/venv/
 **/.venv/
 **/__pycache__/
+*.pyc
+
+# Environment Variables
 **/.env
 
-# React
+# React / Node
 **/node_modules/
 **/dist/
 
-# Mac
+# System files
 .DS_Store
