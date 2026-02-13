@@ -1,10 +1,10 @@
-# LegalVault — Contract Manager AI
+# 🔒 LegalVault — Contract Manager AI
 
 **Your contracts, simplified.** Upload PDFs and let AI extract key insights, track expirations, and manage reminders—all in one place.
 
 ---
 
-## See it in action
+## 📸 See it in action
 
 *Add your screenshots to the `screenshots/` folder so they appear below. No need to run the app—HR and recruiters can see the product at a glance.*
 
@@ -24,65 +24,65 @@
 
 ---
 
-## What is LegalVault?
+## 📖 What is LegalVault?
 
 **LegalVault** is an intelligent contract management web app. Users sign up, upload PDF contracts, and get instant AI-powered analysis: key terms, parties, expiry dates, and risk flags. They can organize contracts into folders, set expiration reminders (synced to Google Calendar), and view analytics on their portfolio—total liability, upcoming payments, and red-flag summaries. The app also sends **automated email reminders** via **AWS SES** one week before a contract expires: **AWS EventBridge** runs every morning at 8:00 and triggers an **AWS Lambda** function, which sends those emails through SES. Everything is built with a modern React frontend and a Python/FastAPI backend, using AWS (DynamoDB, S3, Lambda, SES, EventBridge) and external services (OpenAI, Google Calendar).
 
 ---
 
-## What you see (screenshots explained)
+## 🖼️ What you see (screenshots explained)
 
-### Home
+### 🏠 Home
 
 The **Home** page is the landing view after login. It shows a hero line (“Your Contracts, Simplified”), a drag-and-drop upload area for PDFs, a quick overview (total contracts, annual liability, auto-renewals), and a “Recent contracts” list. Users can upload a contract here and jump to Contracts or Analytics.
 
-### Contracts page
+### 📄 Contracts page
 
 The **Contracts** page is the main workspace. A compact upload bar sits at the top. Below, **system folders** (All, Expires in 30 days, Not signed, Red flag) and **custom folders** (user-created, with name/color/symbol) let users filter and group contracts. Each contract appears as a **card** with: subject, counterparty, short summary, upload/expiry dates, “Not signed” when relevant, red-flag tags, and actions (View PDF, Insights, reminder dropdown, delete). The sidebar shows the same full cards for **recent** contracts and quick access to Settings and About.
 
-### Analytics page
+### 📊 Analytics page
 
 The **Analytics** page gives a high-level view of the contract portfolio: total contracts, annual liability, upcoming payments, auto-renewal count, notice periods, risk breakdown, and top counterparties. It helps users see exposure and deadlines at a glance.
 
-### Sidebar and navigation
+### 🧭 Sidebar and navigation
 
 A **fixed sidebar** offers: Home, Contracts, Analytics, then a scrollable **Recent** section with full contract cards, and at the bottom **Settings** (account, default reminder, Logout) and **About** (product info, AWS & external services, developer).
 
-### Login
+### 🔐 Login
 
 The **Login / Sign up** screen is shown when the user is not authenticated. It includes a simple form (username, and email for signup), “Welcome back” / “Create your account” copy, and primary action buttons. No app features are available until the user signs in.
 
-### Settings page
+### ⚙️ Settings page
 
 The **Settings** page lets users manage their account: view current user, set a default reminder preference, and **Logout**. Google Calendar connection status can be shown here as well.
 
-### About page
+### ℹ️ About page
 
 The **About** page describes the product (“What is LegalVault?”, key features), lists **AWS & external services** (DynamoDB, S3, Lambda, EventBridge, SES, Google Calendar, daily email), and includes an **About the developer** section (e.g. name, institution).
 
-### Analyzed contract
+### 📋 Analyzed contract
 
 An **analyzed contract** is shown as a **contract card**: type badge, counterparty name, short summary, uploaded date, expiry date, “Not signed” pill when relevant, red-flag tags (e.g. Non-compete), and actions (View PDF, Insights, reminder dropdown). This is the same card used on Home, Contracts, and in the sidebar Recent list.
 
-### Google Calendar event
+### 📅 Google Calendar event
 
 When the user connects **Google Calendar**, expiration reminders can be created as events (e.g. 1 week or 1 month before expiry). The screenshot shows how such a reminder appears in Google Calendar—same contract and deadline the user sees in LegalVault.
 
 ---
 
-## Key features (at a glance)
+## ✨ Key features (at a glance)
 
-- **AI contract analysis** — Extract subject, parties, dates, key terms, and risk flags from PDFs (OpenAI).
-- **Folders** — System filters (All, Expires 30d, Not signed, Red flag) plus custom folders (create, assign, delete).
-- **Signing and risk** — “Not signed” detection and red-flag labels on cards and in filters.
-- **Google Calendar** — Connect account and set per-contract reminders (e.g. 1 week / 1 month before expiry); events appear in the user’s calendar as in the screenshot.
-- **Automated email reminders** — **AWS EventBridge** runs every morning at 8:00 and triggers **AWS Lambda**, which uses **AWS SES** to send the user an email one week before a contract expires.
-- **Secure storage** — PDFs in AWS S3; metadata and user data in DynamoDB.
-- **Multi-page UI** — Home, Contracts, Analytics, Settings, About with React Router and a consistent sidebar.
+- **🤖 AI contract analysis** — Extract subject, parties, dates, key terms, and risk flags from PDFs (OpenAI).
+- **📁 Folders** — System filters (All, Expires 30d, Not signed, Red flag) plus custom folders (create, assign, delete).
+- **⚠️ Signing and risk** — “Not signed” detection and red-flag labels on cards and in filters.
+- **📅 Google Calendar** — Connect account and set per-contract reminders (e.g. 1 week / 1 month before expiry); events appear in the user’s calendar as in the screenshot.
+- **📧 Automated email reminders** — **AWS EventBridge** runs every morning at 8:00 and triggers **AWS Lambda**, which uses **AWS SES** to send the user an email one week before a contract expires.
+- **🔐 Secure storage** — PDFs in AWS S3; metadata and user data in DynamoDB.
+- **🖥️ Multi-page UI** — Home, Contracts, Analytics, Settings, About with React Router and a consistent sidebar.
 
 ---
 
-## Tech stack
+## 🛠️ Tech stack
 
 | Layer | Technologies |
 |-------|--------------|
@@ -93,18 +93,18 @@ When the user connects **Google Calendar**, expiration reminders can be created 
 
 ---
 
-## Prerequisites
+## 📋 Prerequisites
 
 To run the project locally you need:
 
-- **Python 3.9+** and **Node.js 16+** (npm)
-- **AWS** — DynamoDB tables, S3 bucket, IAM user with correct permissions
-- **Google Cloud** — Project with Calendar API enabled and OAuth 2.0 credentials
-- **OpenAI** — API key
+- **🐍 Python 3.9+** and **📦 Node.js 16+** (npm)
+- **☁️ AWS** — DynamoDB tables, S3 bucket, IAM user with correct permissions
+- **🔵 Google Cloud** — Project with Calendar API enabled and OAuth 2.0 credentials
+- **🔑 OpenAI** — API key
 
 ---
 
-## Getting started
+## 🚀 Getting started
 
 ### 1. Clone and install
 
@@ -161,7 +161,7 @@ cd client && npm install && npm run dev
 
 ---
 
-## Project structure (high level)
+## 📁 Project structure (high level)
 
 ```
 contract_manager/
@@ -186,7 +186,7 @@ contract_manager/
 
 ---
 
-## API overview
+## 🔌 API overview
 
 | Area | Endpoints |
 |------|-----------|
@@ -197,7 +197,7 @@ contract_manager/
 
 ---
 
-## Troubleshooting
+## 🐛 Troubleshooting
 
 - **Port in use** — Backend: `lsof -ti:8000 \| xargs kill -9`. Frontend: `npm run dev -- --port 5174`.
 - **AWS/Google errors** — Check `.env`, IAM permissions, DynamoDB table names, and OAuth redirect URI.
@@ -205,7 +205,7 @@ contract_manager/
 
 ---
 
-## Security and production
+## 🔒 Security and production
 
 - Do not commit `.env`. Use env vars for all secrets.
 - Production: set `FRONTEND_URL` and Google redirect to production URLs, use HTTPS, and restrict CORS.
