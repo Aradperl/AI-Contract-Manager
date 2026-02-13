@@ -1,316 +1,217 @@
-# Contract Manager AI 🚀
+# LegalVault — Contract Manager AI
 
-An intelligent contract analysis platform powered by AI that extracts key information from PDF contracts, tracks expiration dates, and syncs reminders with Google Calendar.
+**Your contracts, simplified.** Upload PDFs and let AI extract key insights, track expirations, and manage reminders—all in one place.
 
-## ✨ Features
+---
 
-- **AI-Powered Contract Analysis**: Automatically extracts critical information from PDF contracts using OpenAI GPT-4o
-- **Smart Metadata Extraction**: Identifies contract subjects, parties, expiry dates, and key terms
-- **Google Calendar Integration**: Sync contract expiration reminders directly to your Google Calendar
-- **Customizable Notifications**: Set reminders for 1 week, 2 weeks, or 1 month before contract expiration
-- **Secure Document Storage**: Store contracts securely in AWS S3
-- **User Authentication**: Secure user registration and login system
-- **Contract History**: View all your analyzed contracts in one place
-- **PDF Preview**: Click to view original contract documents
+## See it in action
 
-## 🛠 Tech Stack
+*Add your screenshots to the `screenshots/` folder so they appear below. No need to run the app—HR and recruiters can see the product at a glance.*
 
-### Frontend
-- **React 19** with TypeScript
-- **Vite** for fast development and building
-- **Axios** for API communication
-- Modern, responsive UI with inline styles
+| [Home](#home) | [Contracts](#contracts-page) | [Analytics](#analytics-page) |
+|---------------|------------------------------|------------------------------|
+| ![Home](screenshots/home.png) | ![Contracts](screenshots/contracts.png) | ![Analytics](screenshots/analytics.png) |
 
-### Backend
-- **Python 3.9+**
-- **FastAPI** for RESTful API
-- **Uvicorn** as ASGI server
-- **PyMuPDF (fitz)** for PDF text extraction
+| [Login](#login) | [Settings](#settings-page) | [About](#about-page) | [Analyzed contract](#analyzed-contract) |
+|-----------------|----------------------------|----------------------|----------------------------------------|
+| ![Login](screenshots/login.png) | ![Settings](screenshots/settings.png) | ![About](screenshots/about.png) | ![Analyzed contract](screenshots/analyzed-contract.png) |
 
-### AI & Services
-- **OpenAI GPT-4o-mini** for contract analysis
-- **AWS DynamoDB** for data storage
-- **AWS S3** for document storage
-- **Google Calendar API** for reminder synchronization
-- **Google OAuth 2.0** for authentication
+| [Google Calendar event](#google-calendar-event) |
+|-------------------------------------------------|
+| ![Google Calendar event](screenshots/google-calendar.png) |
 
-## 📋 Prerequisites
+*Caption: Home • Contracts • Analytics • Login • Settings • About • Contract card • Google Calendar reminder*
 
-Before you begin, ensure you have:
+---
 
-- **Python 3.9+** installed
-- **Node.js 16+** and npm installed
-- **AWS Account** with:
-  - DynamoDB tables created
-  - S3 bucket for document storage
-  - IAM user with appropriate permissions
-- **Google Cloud Project** with:
-  - Google Calendar API enabled
-  - OAuth 2.0 credentials configured
-- **OpenAI API Key**
+## What is LegalVault?
 
-## 🚀 Getting Started
+**LegalVault** is an intelligent contract management web app. Users sign up, upload PDF contracts, and get instant AI-powered analysis: key terms, parties, expiry dates, and risk flags. They can organize contracts into folders, set expiration reminders (synced to Google Calendar), and view analytics on their portfolio—total liability, upcoming payments, and red-flag summaries. The app also sends **automated email reminders** via **AWS SES** one week before a contract expires: **AWS EventBridge** runs every morning at 8:00 and triggers an **AWS Lambda** function, which sends those emails through SES. Everything is built with a modern React frontend and a Python/FastAPI backend, using AWS (DynamoDB, S3, Lambda, SES, EventBridge) and external services (OpenAI, Google Calendar).
 
-### 1. Clone the Repository
+---
+
+## What you see (screenshots explained)
+
+### Home
+
+The **Home** page is the landing view after login. It shows a hero line (“Your Contracts, Simplified”), a drag-and-drop upload area for PDFs, a quick overview (total contracts, annual liability, auto-renewals), and a “Recent contracts” list. Users can upload a contract here and jump to Contracts or Analytics.
+
+### Contracts page
+
+The **Contracts** page is the main workspace. A compact upload bar sits at the top. Below, **system folders** (All, Expires in 30 days, Not signed, Red flag) and **custom folders** (user-created, with name/color/symbol) let users filter and group contracts. Each contract appears as a **card** with: subject, counterparty, short summary, upload/expiry dates, “Not signed” when relevant, red-flag tags, and actions (View PDF, Insights, reminder dropdown, delete). The sidebar shows the same full cards for **recent** contracts and quick access to Settings and About.
+
+### Analytics page
+
+The **Analytics** page gives a high-level view of the contract portfolio: total contracts, annual liability, upcoming payments, auto-renewal count, notice periods, risk breakdown, and top counterparties. It helps users see exposure and deadlines at a glance.
+
+### Sidebar and navigation
+
+A **fixed sidebar** offers: Home, Contracts, Analytics, then a scrollable **Recent** section with full contract cards, and at the bottom **Settings** (account, default reminder, Logout) and **About** (product info, AWS & external services, developer).
+
+### Login
+
+The **Login / Sign up** screen is shown when the user is not authenticated. It includes a simple form (username, and email for signup), “Welcome back” / “Create your account” copy, and primary action buttons. No app features are available until the user signs in.
+
+### Settings page
+
+The **Settings** page lets users manage their account: view current user, set a default reminder preference, and **Logout**. Google Calendar connection status can be shown here as well.
+
+### About page
+
+The **About** page describes the product (“What is LegalVault?”, key features), lists **AWS & external services** (DynamoDB, S3, Lambda, EventBridge, SES, Google Calendar, daily email), and includes an **About the developer** section (e.g. name, institution).
+
+### Analyzed contract
+
+An **analyzed contract** is shown as a **contract card**: type badge, counterparty name, short summary, uploaded date, expiry date, “Not signed” pill when relevant, red-flag tags (e.g. Non-compete), and actions (View PDF, Insights, reminder dropdown). This is the same card used on Home, Contracts, and in the sidebar Recent list.
+
+### Google Calendar event
+
+When the user connects **Google Calendar**, expiration reminders can be created as events (e.g. 1 week or 1 month before expiry). The screenshot shows how such a reminder appears in Google Calendar—same contract and deadline the user sees in LegalVault.
+
+---
+
+## Key features (at a glance)
+
+- **AI contract analysis** — Extract subject, parties, dates, key terms, and risk flags from PDFs (OpenAI).
+- **Folders** — System filters (All, Expires 30d, Not signed, Red flag) plus custom folders (create, assign, delete).
+- **Signing and risk** — “Not signed” detection and red-flag labels on cards and in filters.
+- **Google Calendar** — Connect account and set per-contract reminders (e.g. 1 week / 1 month before expiry); events appear in the user’s calendar as in the screenshot.
+- **Automated email reminders** — **AWS EventBridge** runs every morning at 8:00 and triggers **AWS Lambda**, which uses **AWS SES** to send the user an email one week before a contract expires.
+- **Secure storage** — PDFs in AWS S3; metadata and user data in DynamoDB.
+- **Multi-page UI** — Home, Contracts, Analytics, Settings, About with React Router and a consistent sidebar.
+
+---
+
+## Tech stack
+
+| Layer | Technologies |
+|-------|--------------|
+| **Frontend** | React 19, TypeScript, Vite, React Router, Axios |
+| **Backend** | Python 3.9+, FastAPI, Uvicorn, PyMuPDF (PDF text extraction) |
+| **AI & data** | OpenAI GPT-4o-mini, AWS DynamoDB, AWS S3, AWS Lambda, AWS SES, AWS EventBridge |
+| **Integrations** | Google Calendar API, Google OAuth 2.0 |
+
+---
+
+## Prerequisites
+
+To run the project locally you need:
+
+- **Python 3.9+** and **Node.js 16+** (npm)
+- **AWS** — DynamoDB tables, S3 bucket, IAM user with correct permissions
+- **Google Cloud** — Project with Calendar API enabled and OAuth 2.0 credentials
+- **OpenAI** — API key
+
+---
+
+## Getting started
+
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/contract_manager.git
 cd contract_manager
 ```
 
-### 2. Backend Setup
+### 2. Backend
 
 ```bash
-# Navigate to backend directory
 cd backend
-
-# Create virtual environment
 python3 -m venv venv
-
-# Activate virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install fastapi uvicorn boto3 openai python-dotenv pymupdf passlib[bcrypt] google-auth-oauthlib google-api-python-client
 ```
 
-### 3. Configure Environment Variables
-
-Create a `.env` file in the `backend` directory:
+Create a `.env` in `backend/` with:
 
 ```env
-# AWS Configuration
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
 AWS_REGION=us-east-1
-S3_BUCKET_NAME=your_bucket_name
-
-# OpenAI
-OPENAI_API_KEY=your_openai_api_key
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# Frontend URL (optional, defaults to http://localhost:5173)
+S3_BUCKET_NAME=...
+OPENAI_API_KEY=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
 FRONTEND_URL=http://localhost:5173
 ```
 
-### 4. AWS Setup
+### 3. AWS
 
-#### DynamoDB Tables
+- **DynamoDB**: Tables `Users` (partition key: `username`) and `Analyzed_Contracts` (partition: `user_id`, sort: `contract_id`). See `backend/FOLDERS_TABLE.md` for the folders table.
+- **S3**: One bucket for PDFs; IAM allowed: `PutObject`, `GetObject`, `GeneratePresignedUrl`.
 
-Create two tables in AWS DynamoDB:
+### 4. Google Cloud
 
-1. **Users Table**
-   - Table name: `Users`
-   - Partition key: `username` (String)
+- Enable **Google Calendar API**.
+- Create **OAuth 2.0** “Web application” credentials; redirect URI: `http://localhost:8000/auth/callback`.
+- Consent screen scope: `https://www.googleapis.com/auth/calendar.events`.
 
-2. **Analyzed_Contracts Table**
-   - Table name: `Analyzed_Contracts`
-   - Partition key: `user_id` (String)
-   - Sort key: `contract_id` (String)
-
-#### S3 Bucket
-
-1. Create an S3 bucket for storing PDF contracts
-2. Configure appropriate bucket policies for your use case
-3. Update `S3_BUCKET_NAME` in your `.env` file
-
-#### IAM Permissions
-
-Your AWS IAM user needs permissions for:
-- DynamoDB: `PutItem`, `GetItem`, `Query`, `UpdateItem`, `DeleteItem`
-- S3: `PutObject`, `GetObject`, `GeneratePresignedUrl`
-
-### 5. Google Cloud Setup
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable **Google Calendar API**:
-   - Navigate to APIs & Services > Library
-   - Search for "Google Calendar API"
-   - Click "Enable"
-4. Create OAuth 2.0 Credentials:
-   - Go to APIs & Services > Credentials
-   - Click "Create Credentials" > "OAuth client ID"
-   - Choose "Web application"
-   - Add authorized redirect URI: `http://localhost:8000/auth/callback`
-   - Copy the Client ID and Client Secret to your `.env` file
-5. Configure OAuth Consent Screen:
-   - Add the scope: `https://www.googleapis.com/auth/calendar.events`
-   - Add test users if in testing mode
-
-### 6. Start the Backend Server
+### 5. Run
 
 ```bash
-# Make sure you're in the backend directory with venv activated
-uvicorn main:app --reload
+# Terminal 1 – backend
+cd backend && uvicorn main:app --reload
+
+# Terminal 2 – frontend
+cd client && npm install && npm run dev
 ```
 
-The API will be available at `http://localhost:8000`
+- Backend: `http://localhost:8000`  
+- Frontend: `http://localhost:5173`
 
-### 7. Frontend Setup
+---
 
-```bash
-# Navigate to client directory (from project root)
-cd client
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-The frontend will be available at `http://localhost:5173`
-
-## 📁 Project Structure
+## Project structure (high level)
 
 ```
 contract_manager/
 ├── backend/
-│   ├── main.py              # FastAPI application
-│   └── .env                 # Environment variables (not in git)
+│   ├── main.py              # FastAPI app, CORS, routes
+│   ├── config.py            # Env / settings
+│   ├── routers/             # contracts, folders, google_auth
+│   ├── services/            # AI analysis, etc.
+│   └── FOLDERS_TABLE.md     # DynamoDB folders schema
 ├── client/
 │   ├── src/
-│   │   ├── App.tsx          # Main React component
-│   │   ├── main.tsx         # React entry point
-│   │   └── ErrorBoundary.tsx # Error handling
-│   ├── package.json
-│   └── vite.config.ts
-├── README.md
-└── .gitignore
+│   │   ├── App.tsx          # Auth, context, modals, routes
+│   │   ├── layouts/         # AppLayout (sidebar + Outlet)
+│   │   ├── pages/           # Home, Contracts, Analytics, Settings, About
+│   │   ├── components/      # Navbar, ContractCard, CompactUploadBar, etc.
+│   │   ├── context/         # AppContext
+│   │   └── apiService.ts
+│   └── package.json
+├── screenshots/             # Add home.png, contracts.png, analytics.png here
+└── README.md
 ```
-
-## 🔑 Environment Variables Reference
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `AWS_ACCESS_KEY_ID` | AWS access key for DynamoDB and S3 | Yes |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key | Yes |
-| `AWS_REGION` | AWS region (e.g., us-east-1) | Yes |
-| `S3_BUCKET_NAME` | Name of your S3 bucket for PDF storage | Yes |
-| `OPENAI_API_KEY` | OpenAI API key for contract analysis | Yes |
-| `GOOGLE_CLIENT_ID` | Google OAuth 2.0 client ID | Yes |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 client secret | Yes |
-| `FRONTEND_URL` | Frontend URL for redirects (default: http://localhost:5173) | No |
-
-## 📖 Usage
-
-1. **Sign Up / Login**: Create an account or log in with existing credentials
-2. **Connect Google Calendar**: Click "Connect Google" to enable calendar reminders
-3. **Upload Contract**: Click "+ Upload PDF Contract" and select a PDF file
-4. **View Analysis**: The AI will analyze your contract and extract key information
-5. **Set Reminders**: If Google Calendar is connected, select notification timing (1 week, 2 weeks, or 1 month before expiration)
-6. **View Documents**: Click on any filename to view the original PDF
-7. **View Analysis**: Click "View Analysis" to see detailed contract insights
-
-## 🔌 API Endpoints
-
-### Authentication
-- `POST /signup` - Register a new user
-- `POST /login` - User login
-
-### Contracts
-- `POST /upload` - Upload and analyze a PDF contract
-- `GET /contracts?user_id={user_id}` - Get all contracts for a user
-- `GET /view/{contract_id}?user_id={user_id}` - Get presigned URL for PDF
-- `DELETE /contracts/{contract_id}?user_id={user_id}` - Delete a contract
-
-### Google Calendar
-- `GET /auth/google?user_id={user_id}` - Get Google OAuth URL
-- `GET /auth/callback` - OAuth callback handler
-- `GET /check-google-connection?user_id={user_id}` - Check if Google is connected
-- `POST /update-reminder` - Update contract reminder settings
-
-## 🐛 Troubleshooting
-
-### Backend Issues
-
-**Port already in use:**
-```bash
-# Find and kill the process using port 8000
-lsof -ti:8000 | xargs kill -9
-```
-
-**Module not found errors:**
-```bash
-# Make sure virtual environment is activated
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-# Reinstall dependencies
-pip install -r requirements.txt
-```
-
-**AWS connection errors:**
-- Verify your AWS credentials in `.env`
-- Check IAM permissions
-- Ensure DynamoDB tables exist
-
-**Google Calendar API errors:**
-- Verify Google Calendar API is enabled
-- Check OAuth credentials
-- Ensure redirect URI matches exactly: `http://localhost:8000/auth/callback`
-
-### Frontend Issues
-
-**Port already in use:**
-```bash
-# Change port in vite.config.ts or use:
-npm run dev -- --port 5174
-```
-
-**CORS errors:**
-- Ensure backend CORS middleware allows your frontend URL
-- Check that backend is running on port 8000
-
-**API connection errors:**
-- Verify backend is running
-- Check `API_BASE` in frontend code matches your backend URL
-
-## 🔒 Security Notes
-
-- **Never commit `.env` files** to version control
-- Use environment variables for all sensitive data
-- Keep your API keys secure
-- Use HTTPS in production
-- Regularly rotate AWS and Google credentials
-
-## 📝 Creating requirements.txt
-
-To generate a `requirements.txt` file for easy dependency installation:
-
-```bash
-cd backend
-pip freeze > requirements.txt
-```
-
-## 🚢 Production Deployment
-
-For production deployment:
-
-1. Set `FRONTEND_URL` to your production frontend URL
-2. Update Google OAuth redirect URI to production URL
-3. Use environment variables instead of `.env` file
-4. Enable HTTPS
-5. Configure proper CORS origins
-6. Set up proper error logging and monitoring
-
-## 📄 License
-
-[Add your license here]
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📧 Support
-
-For issues and questions, please open an issue on GitHub.
 
 ---
 
-**Note**: This project uses Google Calendar API in testing mode. For production use, you'll need to go through Google's verification process.
+## API overview
+
+| Area | Endpoints |
+|------|-----------|
+| **Auth** | `POST /signup`, `POST /login` |
+| **Contracts** | `POST /upload`, `GET /contracts?user_id=`, `GET /view/{id}`, `DELETE /contracts/{id}` |
+| **Folders** | `GET/POST/DELETE /folders` (see backend) |
+| **Google** | `GET /auth/google`, `GET /auth/callback`, `GET /check-google-connection`, `POST /update-reminder` |
+
+---
+
+## Troubleshooting
+
+- **Port in use** — Backend: `lsof -ti:8000 \| xargs kill -9`. Frontend: `npm run dev -- --port 5174`.
+- **AWS/Google errors** — Check `.env`, IAM permissions, DynamoDB table names, and OAuth redirect URI.
+- **CORS** — Ensure backend CORS allows `FRONTEND_URL`.
+
+---
+
+## Security and production
+
+- Do not commit `.env`. Use env vars for all secrets.
+- Production: set `FRONTEND_URL` and Google redirect to production URLs, use HTTPS, and restrict CORS.
+
+---
+
+**LegalVault** — *Your contracts, simplified.*
+
+For detailed setup (e.g. DynamoDB schema, folder API), see the backend docs and `FOLDERS_TABLE.md`.
