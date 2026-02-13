@@ -109,7 +109,7 @@ To run the project locally you need:
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/contract_manager.git
+git clone https://github.com/Aradperl/AI-Contract-Manager
 cd contract_manager
 ```
 
@@ -180,7 +180,7 @@ contract_manager/
 │   │   ├── context/         # AppContext
 │   │   └── apiService.ts
 │   └── package.json
-├── screenshots/             # Add home.png, contracts.png, analytics.png here
+├── screenshots/            
 └── README.md
 ```
 
