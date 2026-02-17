@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Title1, Body1, Input, Card, Button } from '@fluentui/react-components';
 import * as S from '../AppStyles';
 
 interface DashboardHeaderProps {
@@ -9,8 +10,12 @@ interface DashboardHeaderProps {
   onSearchChange?: (val: string) => void;
   sortBy?: string;
   onSortChange?: (val: string) => void;
-  /** When false, only hero + upload are shown (e.g. on Home). Default true. */
   showFilterBar?: boolean;
+}
+
+function preventDefault(e: React.DragEvent) {
+  e.preventDefault();
+  e.stopPropagation();
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -24,11 +29,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   showFilterBar = true,
 }) => {
   const [dragActive, setDragActive] = useState(false);
-
-  const preventDefault = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
 
   const handleDragOver = (e: React.DragEvent) => {
     preventDefault(e);
@@ -50,46 +50,62 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
   };
 
-  return (
-  <>
-    <header style={S.heroSection}>
-      <h1 style={S.heroTitle}>Your Contracts, <span style={S.gradientText}>Simplified.</span></h1>
-      <p style={S.heroSub}>Upload PDFs and let AI extract key insights and manage deadlines for you.</p>
-      <div
-        style={{ ...S.uploadArea, ...(dragActive ? S.uploadAreaDragActive : {}) }}
-        className={loading ? "loading" : ""}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {loading && <div className="scanner-line"></div>}
-        <input type="file" id="file" accept="application/pdf,.pdf" onChange={onUpload} style={{display:'none'}} />
-        <label htmlFor="file" style={S.uploadLabel}>
-          <div style={S.iconCircle}>{loading ? "⚙️" : "📁"}</div>
-          <span style={{fontWeight:'600'}}>{loading ? "AI is analyzing document..." : "Click to upload or drag & drop a PDF"}</span>
-        </label>
-      </div>
-    </header>
+  const uploadLabelText = loading ? 'AI is analyzing document...' : 'Click to upload or drag & drop a PDF';
 
-    {showFilterBar && (
-      <div style={S.filterBarContainer}>
-        <input
-          type="text"
-          placeholder="Search contracts..."
-          style={S.searchInputStyle}
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '600' }}>Sort by:</span>
-          <select style={S.sortSelectStyle} value={sortBy} onChange={(e) => onSortChange(e.target.value)}>
-            <option value="timestamp">Upload Date</option>
-            <option value="alphabetical">Company (A-Z)</option>
-            <option value="expiry">Expiration</option>
-          </select>
+  return (
+    <>
+      <header style={S.heroSection}>
+        <Title1 block style={S.heroTitle as React.CSSProperties}>
+          Your Contracts, <span style={S.gradientText}>Simplified.</span>
+        </Title1>
+        <Body1 block style={S.heroSub as React.CSSProperties}>
+          Upload PDFs and let AI extract key insights and manage deadlines for you.
+        </Body1>
+        <Card
+          style={{ ...S.uploadArea, ...(dragActive ? S.uploadAreaDragActive : {}) }}
+          className={loading ? 'loading' : ''}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {loading && <div className="scanner-line" />}
+          <input
+            type="file"
+            id="file"
+            accept="application/pdf,.pdf"
+            onChange={onUpload}
+            style={{ display: 'none' }}
+          />
+          <label htmlFor="file" style={{ ...S.uploadLabel, cursor: 'pointer', margin: 0 }}>
+            <div style={S.iconCircle}>{loading ? '⚙️' : '📁'}</div>
+            <span style={{ fontWeight: 600 }}>{uploadLabelText}</span>
+          </label>
+        </Card>
+      </header>
+
+      {showFilterBar && (
+        <div style={S.filterBarContainer}>
+          <Input
+            type="text"
+            placeholder="Search contracts..."
+            value={searchTerm}
+            onChange={(_, d) => onSearchChange(d.value)}
+            style={{ minWidth: 240 }}
+          />
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <Body1 style={{ color: '#64748b', fontWeight: 600 }}>Sort by:</Body1>
+            <select
+              style={S.sortSelectStyle}
+              value={sortBy}
+              onChange={(e) => onSortChange(e.target.value)}
+            >
+              <option value="timestamp">Upload Date</option>
+              <option value="alphabetical">Company (A-Z)</option>
+              <option value="expiry">Expiration</option>
+            </select>
+          </div>
         </div>
-      </div>
-    )}
-  </>
+      )}
+    </>
   );
 };

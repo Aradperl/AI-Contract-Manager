@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { FluentProvider, webLightTheme } from '@fluentui/react-components'
 import App from './App.tsx'
 import ErrorBoundary from './ErrorBoundary.tsx'
 
@@ -12,11 +13,13 @@ if (!rootElement) {
 try {
   createRoot(rootElement).render(
     <StrictMode>
-      <ErrorBoundary>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ErrorBoundary>
+      <FluentProvider theme={webLightTheme}>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ErrorBoundary>
+      </FluentProvider>
     </StrictMode>,
   )
 } catch (error) {

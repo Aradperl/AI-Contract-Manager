@@ -1,10 +1,11 @@
 import json
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from config import s3_client, contracts_table, users_table
 from models import ReminderUpdate
+from deps import get_current_user
 from routers import auth, contracts, google_auth, folders
 from services.calendar_service import (
     create_or_update_reminder_event,
@@ -31,8 +32,11 @@ app.include_router(folders.router)
 
 
 @app.get("/view/{contract_id}/pdf")
-async def view_contract_pdf(contract_id: str, user_id: str):
+async def view_contract_pdf(
+    contract_id: str, current_user: str = Depends(get_current_user)
+):
     """Stream the PDF from S3 with Content-Disposition: inline so the browser displays it (no download)."""
+    user_id = current_user
     res = contracts_table.get_item(Key={"user_id": user_id, "contract_id": contract_id})
     item = res.get("Item")
     if not item:
@@ -68,9 +72,11 @@ def _party_from_analysis(analysis):
 
 
 @app.post("/update-reminder")
-async def update_reminder(body: ReminderUpdate):
+async def update_reminder(
+    body: ReminderUpdate, current_user: str = Depends(get_current_user)
+):
     """Update contract reminder and sync to Google Calendar (create/update/delete event)."""
-    user_id = body.user_id
+    user_id = current_user
     contract_id = body.contract_id
     setting = (body.reminder_setting or "none").strip().lower()
     if setting not in ("none", "week", "month"):

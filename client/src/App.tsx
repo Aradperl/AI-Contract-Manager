@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { Card, Subtitle1, Body1, Button } from '@fluentui/react-components';
 import * as S from './AppStyles';
-import { api, getViewPdfUrl, API_BASE } from './apiService';
+import { api, getPdfBlobUrl, setAuth, getToken, clearAuth, API_BASE } from './apiService';
 import { AppProvider } from './context/AppContext';
 import { AppLayout } from './layouts/AppLayout';
 import { HomePage } from './pages/HomePage';
@@ -54,8 +55,26 @@ function renderInsightContent(raw: string | unknown) {
 
 function App() {
   // --- States ---
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(() => localStorage.getItem('user_id') || '');
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const token = getToken();
+      const uid = (typeof localStorage !== 'undefined' && localStorage.getItem('user_id')) || '';
+      if (!token && uid) {
+        clearAuth();
+        return '';
+      }
+      return uid;
+    } catch {
+      return '';
+    }
+  });
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    try {
+      return !!getToken();
+    } catch {
+      return false;
+    }
+  });
   const [userPicture, setUserPicture] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,6 +82,7 @@ function App() {
   const [pdfViewUrl, setPdfViewUrl] = useState<string | null>(null);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authLoading, setAuthLoading] = useState(false);
   const [authModal, setAuthModal] = useState<{ type: 'success' | 'error'; title: string; body: string; buttonText: string } | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -78,49 +98,85 @@ function App() {
   }, []);
 
   // --- Data Loading ---
-  const loadUserData = useCallback(async (uid: string) => {
-    if (!uid) return;
+  const loadUserData = useCallback(async () => {
+    if (!getToken()) return;
     try {
       const [resContracts, resGoogle] = await Promise.all([
-        api.getContracts(uid),
-        api.checkGoogle(uid)
+        api.getContracts(),
+        api.checkGoogle(),
       ]);
       setHistory(resContracts.data?.contracts || []);
       setIsGoogleConnected(resGoogle.data.connected || false);
       setUserPicture(resGoogle.data.picture_url || null);
-    } catch (e) { console.error("Error loading data:", e); }
+    } catch (e) {
+      console.error('Error loading data:', e);
+    }
   }, []);
 
   // Listen for Google OAuth success (popup)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.data === "google-success" && currentUser) loadUserData(currentUser);
+      if (event.data === 'google-success') loadUserData();
     };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [currentUser, loadUserData]);
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [loadUserData]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (getToken() && currentUser) {
       setIsLoggedIn(true);
-      loadUserData(currentUser);
+      loadUserData();
     }
   }, [currentUser, loadUserData]);
 
   // --- Handlers ---
   const handleAuth = async () => {
+    const trimmedUser = username.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedUser || !password) {
+      setAuthModal({
+        type: 'error',
+        title: 'Missing fields',
+        body: 'Please enter username and password.',
+        buttonText: 'OK',
+      });
+      return;
+    }
+    if (authMode === 'signup' && !trimmedEmail) {
+      setAuthModal({
+        type: 'error',
+        title: 'Missing email',
+        body: 'Please enter your email to sign up.',
+        buttonText: 'OK',
+      });
+      return;
+    }
+    setAuthLoading(true);
+    setAuthModal(null);
     try {
       const endpoint = authMode === 'login' ? 'login' : 'signup';
       const formData = new URLSearchParams();
-      formData.append('username', username);
+      formData.append('username', trimmedUser);
       formData.append('password', password);
-      if (authMode === 'signup') formData.append('email', email);
+      if (authMode === 'signup') formData.append('email', trimmedEmail);
 
-      await api.authenticate(endpoint, formData);
+      const res = await api.authenticate(endpoint, formData);
+      const data = res.data as Record<string, unknown>;
 
       if (authMode === 'login') {
-        localStorage.setItem('user_id', username);
-        setCurrentUser(username);
+        const token = data?.access_token as string | undefined;
+        const name = (data?.username as string) ?? trimmedUser;
+        if (!token) {
+          setAuthModal({
+            type: 'error',
+            title: 'Sign in failed',
+            body: 'Server did not return a token. Please try again.',
+            buttonText: 'Try again',
+          });
+          return;
+        }
+        setAuth(token, name);
+        setCurrentUser(name);
         setIsLoggedIn(true);
       } else {
         setAuthMode('login');
@@ -129,16 +185,25 @@ function App() {
           type: 'success',
           title: 'Account created',
           body: 'You can now sign in with your username and password.',
-          buttonText: 'Sign in'
+          buttonText: 'Sign in',
         });
       }
-    } catch (e) {
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { detail?: string | string[] } }; message?: string };
+      const detail = err?.response?.data?.detail;
+      const msg = Array.isArray(detail)
+        ? detail.join(' ')
+        : typeof detail === 'string'
+          ? detail
+          : err?.message || 'Network error. Is the backend running at ' + API_BASE + '?';
       setAuthModal({
         type: 'error',
         title: authMode === 'login' ? 'Sign in failed' : 'Sign up failed',
-        body: 'Invalid username or password, or this username may already be taken. Please try again.',
-        buttonText: 'Try again'
+        body: msg,
+        buttonText: 'Try again',
       });
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -152,12 +217,14 @@ function App() {
     setLoading(true);
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('user_id', currentUser);
     try {
       await api.upload(formData);
-      loadUserData(currentUser);
-    } catch (e) { alert("Upload Failed"); }
-    finally { setLoading(false); }
+      loadUserData();
+    } catch (e) {
+      alert('Upload Failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,8 +240,8 @@ function App() {
   const confirmDelete = async () => {
     if (!deleteConfirmId) return;
     try {
-      await api.deleteContract(deleteConfirmId, currentUser);
-      loadUserData(currentUser);
+      await api.deleteContract(deleteConfirmId);
+      loadUserData();
       setDeleteConfirmId(null);
       showToast('Contract deleted', 'success');
     } catch (e) {
@@ -187,10 +254,9 @@ function App() {
     try {
       await api.updateReminder({
         contract_id: contractId,
-        user_id: currentUser,
-        reminder_setting: reminderSetting
+        reminder_setting: reminderSetting,
       });
-      loadUserData(currentUser);
+      loadUserData();
       const label = reminderSetting === 'none' ? 'Reminder removed' : `Reminder set to ${reminderSetting === 'week' ? '1 week' : '1 month'} before expiry`;
       showToast(label, 'success');
     } catch (err: any) {
@@ -310,7 +376,13 @@ function App() {
       handleNotificationChange,
       handleFileClick: (contractId: string, e: React.MouseEvent) => {
         e.preventDefault();
-        setPdfViewUrl(getViewPdfUrl(contractId, currentUser));
+        setPdfViewUrl((prev) => {
+          if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+          return null;
+        });
+        getPdfBlobUrl(contractId)
+          .then((url) => setPdfViewUrl(url))
+          .catch(() => showToast('Failed to load PDF', 'error'));
       },
       setSelectedAnalysis,
       showToast,
@@ -382,7 +454,7 @@ function App() {
          <div style={S.authCardStyle} className="auth-page">
            <div style={S.logoIconLarge}>LV</div>
            <div style={S.authAppName}>LegalVault</div>
-           <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '4px', color: '#334155' }}>
+           <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
              {authMode === 'login' ? 'Welcome back' : 'Create your account'}
            </h2>
            <p style={S.modernInputSub}>
@@ -415,8 +487,14 @@ function App() {
              style={S.modernInput}
              autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
            />
-           <button type="button" onClick={handleAuth} style={S.primaryBtnFull} className="primary-auth">
-             {authMode === 'login' ? 'Sign in' : 'Sign up'}
+           <button
+             type="button"
+             onClick={handleAuth}
+             disabled={authLoading}
+             style={S.primaryBtnFull}
+             className="primary-auth"
+           >
+             {authLoading ? (authMode === 'login' ? 'Signing in…' : 'Signing up…') : authMode === 'login' ? 'Sign in' : 'Sign up'}
            </button>
            <button
              type="button"
@@ -462,13 +540,13 @@ function App() {
 
       {selectedAnalysis && (
         <div style={S.modalOverlay} onClick={() => setSelectedAnalysis(null)}>
-          <div style={S.modalContent} onClick={e => e.stopPropagation()}>
+          <Card style={S.modalContent} onClick={e => e.stopPropagation()}>
             <div style={S.modalHeader}>
-              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>Contract Insights</h3>
-              <button onClick={() => setSelectedAnalysis(null)} style={S.closeModal} aria-label="Close">×</button>
+              <Subtitle1 block style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>Contract Insights</Subtitle1>
+              <Button appearance="subtle" onClick={() => setSelectedAnalysis(null)} aria-label="Close">×</Button>
             </div>
             <div style={S.modalBody}>{renderInsightContent(selectedAnalysis)}</div>
-          </div>
+          </Card>
         </div>
       )}
 
@@ -480,7 +558,7 @@ function App() {
             display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1001,
             padding: 24
           }}
-          onClick={() => setPdfViewUrl(null)}
+          onClick={() => setPdfViewUrl((p) => (p?.startsWith('blob:') ? (URL.revokeObjectURL(p), null) : null))}
         >
           <div
             style={{
@@ -490,8 +568,8 @@ function App() {
             onClick={e => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
-              <span style={{ fontWeight: 700, color: '#1e293b' }}>Contract preview</span>
-              <button type="button" onClick={() => setPdfViewUrl(null)} style={S.closeModal} aria-label="Close">×</button>
+              <Subtitle1 block style={{ fontWeight: 700, color: '#1e293b' }}>Contract preview</Subtitle1>
+              <Button appearance="subtle" onClick={() => setPdfViewUrl((p) => (p?.startsWith('blob:') ? (URL.revokeObjectURL(p), null) : null))} aria-label="Close">×</Button>
             </div>
             <iframe title="Contract PDF" src={pdfViewUrl} style={{ flex: 1, width: '100%', border: 'none', minHeight: 400 }} />
           </div>
@@ -500,15 +578,15 @@ function App() {
 
       {deleteConfirmId && (
         <div style={S.modalOverlay} onClick={() => setDeleteConfirmId(null)}>
-          <div style={S.deleteModalCard} onClick={e => e.stopPropagation()}>
+          <Card style={S.deleteModalCard} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🗑️</div>
-            <h3 style={S.deleteModalTitle}>Delete contract?</h3>
-            <p style={S.deleteModalText}>This will permanently remove the contract and its analysis. This action cannot be undone.</p>
+            <Subtitle1 block style={S.deleteModalTitle}>Delete contract?</Subtitle1>
+            <Body1 block style={S.deleteModalText}>This will permanently remove the contract and its analysis. This action cannot be undone.</Body1>
             <div style={S.deleteModalActions}>
-              <button type="button" style={S.deleteModalCancelBtn} onClick={() => setDeleteConfirmId(null)}>Cancel</button>
-              <button type="button" style={S.deleteModalConfirmBtn} onClick={confirmDelete}>Delete</button>
+              <Button appearance="secondary" style={S.deleteModalCancelBtn} onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
+              <Button appearance="primary" style={S.deleteModalConfirmBtn} onClick={confirmDelete}>Delete</Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 

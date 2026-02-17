@@ -1,65 +1,120 @@
+import { useMemo } from 'react';
+import { Card, Subtitle1, Body1, Caption1, Text } from '@fluentui/react-components';
 import { useApp } from '../context/AppContext';
-import * as S from '../AppStyles';
+
+// --- Helpers for formatting
+function formatAnnual(value: number): string {
+  return `$${(value / 1000).toFixed(1)}k`;
+}
+
+function formatCurrency(value: number): string {
+  return `$${Math.round(value).toLocaleString()}`;
+}
+
+function formatExpiryDate(expiry: string): string {
+  try {
+    return new Date(expiry).toLocaleDateString();
+  } catch {
+    return expiry;
+  }
+}
+
+function formatPaymentLine(item: { contract_id: string; party: string; expiry: string; annual_value?: number }): { contract_id: string; party: string; detail: string } {
+  const dateStr = formatExpiryDate(item.expiry);
+  const valueStr = item.annual_value ? ` · ${formatAnnual(item.annual_value)}/yr` : '';
+  return { contract_id: item.contract_id, party: item.party, detail: `${dateStr}${valueStr}` };
+}
+
+// --- Helper: bar height percentage for expiry clusters
+function getBarHeightPct(count: number, max: number): number {
+  if (max <= 0) return 0;
+  return Math.min(100, (count / max) * 100);
+}
+
+// --- Helper: conic gradient for counterparty pie
+const PIE_COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#fb923c', '#eab308'];
+
+function getConicGradient(counterparties: { pct: number }[]): string {
+  if (counterparties.length === 0) return '#e2e8f0';
+  const parts = counterparties.map((p, i) => {
+    const start = counterparties.slice(0, i).reduce((s, x) => s + x.pct, 0);
+    return `${PIE_COLORS[i % PIE_COLORS.length]} ${start}% ${start + p.pct}%`;
+  });
+  return `conic-gradient(${parts.join(', ')})`;
+}
 
 export function AnalyticsPage() {
   const { analytics } = useApp();
 
-  return (
-    <section style={{ ...S.analyticsSection, marginTop: 0 }}>
-      <h2 style={S.analyticsSectionTitle}>Analytics</h2>
-      <p style={S.analyticsSectionSub}>Contract insights and risk overview</p>
+  const maxClusterCount = useMemo(() => {
+    if (analytics.expiryClusters.length === 0) return 1;
+    return Math.max(...analytics.expiryClusters.map((c) => c.count), 1);
+  }, [analytics.expiryClusters]);
 
-      {/* 1. Financial Exposure */}
-      <div style={S.analyticsBlock}>
-        <h3 style={S.analyticsBlockTitle}>Financial Exposure</h3>
-        <div style={S.analyticsGrid}>
-          <div style={S.analyticsCard}>
-            <span style={S.analyticsCardValue}>${(analytics.totalAnnual / 1000).toFixed(1)}k</span>
-            <span style={S.analyticsCardLabel}>Total Annual Liability</span>
-          </div>
-          <div style={S.analyticsCard}>
-            <span style={S.analyticsCardValue}>${Math.round(analytics.avgMonthlyBurn).toLocaleString()}</span>
-            <span style={S.analyticsCardLabel}>Average Monthly Burn</span>
-          </div>
+  const paymentLines = useMemo(
+    () => analytics.upcomingPayments.map(formatPaymentLine),
+    [analytics.upcomingPayments]
+  );
+
+  const hasPayments = analytics.upcomingPayments.length > 0;
+  const hasRisks = analytics.riskCounts.length > 0;
+  const hasClusters = analytics.expiryClusters.length > 0;
+  const hasNextBig = !!analytics.nextBig;
+  const hasCounterparties = analytics.topCounterparties.length > 0;
+
+  return (
+    <section style={{ marginTop: 0 }}>
+      <Subtitle1 block style={{ marginBottom: 4 }}>Analytics</Subtitle1>
+      <Body1 block style={{ color: '#64748b', marginBottom: 24 }}>Contract insights and risk overview</Body1>
+
+      {/* Financial Exposure */}
+      <Card style={{ marginBottom: 24 }}>
+        <Text size={500} weight="semibold" block style={{ marginBottom: 16 }}>Financial Exposure</Text>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
+          <Card>
+            <Text size={500} weight="semibold" block>{formatAnnual(analytics.totalAnnual)}</Text>
+            <Caption1 block style={{ color: '#64748b' }}>Total Annual Liability</Caption1>
+          </Card>
+          <Card>
+            <Text size={500} weight="semibold" block>{formatCurrency(analytics.avgMonthlyBurn)}</Text>
+            <Caption1 block style={{ color: '#64748b' }}>Average Monthly Burn</Caption1>
+          </Card>
         </div>
-        <div style={S.analyticsPanel}>
-          <h4 style={S.analyticsPanelTitle}>Upcoming Payments</h4>
-          <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>Next 3 expiries to plan for</p>
-          {analytics.upcomingPayments.length === 0 ? (
-            <p style={S.analyticsEmpty}>No upcoming payments.</p>
+        <Card style={{ padding: 16 }}>
+          <Text size={400} weight="semibold" block style={{ marginBottom: 4 }}>Upcoming Payments</Text>
+          <Caption1 block style={{ color: '#64748b', marginBottom: 12 }}>Next 3 expiries to plan for</Caption1>
+          {!hasPayments ? (
+            <Body1 style={{ color: '#64748b' }}>No upcoming payments.</Body1>
           ) : (
-            <ul style={S.analyticsList}>
-              {analytics.upcomingPayments.map((u) => (
-                <li key={u.contract_id} style={S.analyticsListItem}>
-                  <span style={S.analyticsListParty}>{u.party}</span>
-                  <span style={S.analyticsListExpiry}>
-                    {new Date(u.expiry).toLocaleDateString()}
-                    {u.annual_value ? ` · $${(u.annual_value / 1000).toFixed(1)}k/yr` : ''}
-                  </span>
+            <ul style={{ margin: 0, paddingLeft: 20, color: '#475569', lineHeight: 1.8 }}>
+              {paymentLines.map((line) => (
+                <li key={line.contract_id}>
+                  <Text weight="semibold">{line.party}</Text>
+                  <Caption1 block style={{ color: '#64748b' }}>{line.detail}</Caption1>
                 </li>
               ))}
             </ul>
           )}
-        </div>
-      </div>
+        </Card>
+      </Card>
 
-      {/* 2. Risk Assessment */}
-      <div style={S.analyticsBlock}>
-        <h3 style={S.analyticsBlockTitle}>Risk Assessment</h3>
-        <div style={S.analyticsGrid}>
-          <div style={{ ...S.analyticsCard, ...S.analyticsCardWarning }}>
-            <span style={S.analyticsCardValue}>{analytics.autoRenewalCount}</span>
-            <span style={S.analyticsCardLabel}>Auto-Renewal Tracker</span>
-          </div>
-          <div style={S.analyticsCard}>
-            <span style={S.analyticsCardValue}>{analytics.noticeAvg} days</span>
-            <span style={S.analyticsCardLabel}>Termination Notice Avg</span>
-          </div>
+      {/* Risk Assessment */}
+      <Card style={{ marginBottom: 24 }}>
+        <Text size={500} weight="semibold" block style={{ marginBottom: 16 }}>Risk Assessment</Text>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
+          <Card style={{ borderColor: '#f59e0b', background: '#fffbeb' }}>
+            <Text size={500} weight="semibold" block>{analytics.autoRenewalCount}</Text>
+            <Caption1 block style={{ color: '#64748b' }}>Auto-Renewal Tracker</Caption1>
+          </Card>
+          <Card>
+            <Text size={500} weight="semibold" block>{analytics.noticeAvg} days</Text>
+            <Caption1 block style={{ color: '#64748b' }}>Termination Notice Avg</Caption1>
+          </Card>
         </div>
-        <div style={S.analyticsPanel}>
-          <h4 style={S.analyticsPanelTitle}>Risk Heatmap</h4>
-          {analytics.riskCounts.length === 0 ? (
-            <p style={S.analyticsEmpty}>No red flags detected in contracts.</p>
+        <Card style={{ padding: 16 }}>
+          <Text size={400} weight="semibold" block style={{ marginBottom: 8 }}>Risk Heatmap</Text>
+          {!hasRisks ? (
+            <Body1 style={{ color: '#64748b' }}>No red flags detected in contracts.</Body1>
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {analytics.riskCounts.map(([flag, count]) => (
@@ -79,74 +134,69 @@ export function AnalyticsPage() {
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </Card>
+      </Card>
 
-      {/* 3. Expiry Pipeline */}
-      <div style={S.analyticsBlock}>
-        <h3 style={S.analyticsBlockTitle}>Expiry Pipeline</h3>
-        <div style={S.analyticsRow}>
-          <div style={S.analyticsPanel}>
-            <h4 style={S.analyticsPanelTitle}>Expiry Clusters</h4>
-            {analytics.expiryClusters.length === 0 ? (
-              <p style={S.analyticsEmpty}>No expiries in the pipeline.</p>
+      {/* Expiry Pipeline */}
+      <Card style={{ marginBottom: 24 }}>
+        <Text size={500} weight="semibold" block style={{ marginBottom: 16 }}>Expiry Pipeline</Text>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, flexWrap: 'wrap' }}>
+          <Card style={{ padding: 16 }}>
+            <Text size={400} weight="semibold" block style={{ marginBottom: 12 }}>Expiry Clusters</Text>
+            {!hasClusters ? (
+              <Body1 style={{ color: '#64748b' }}>No expiries in the pipeline.</Body1>
             ) : (
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, minHeight: 120 }}>
-                {analytics.expiryClusters.map(({ quarter, count }) => {
-                  const max = Math.max(...analytics.expiryClusters.map((c) => c.count), 1);
-                  return (
-                    <div key={quarter} style={{ flex: 1, textAlign: 'center' }}>
-                      <div style={{ height: 80, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                        <div
-                          style={{
-                            width: '100%',
-                            maxWidth: 40,
-                            height: `${(count / max) * 100}%`,
-                            background: 'linear-gradient(180deg, #6366f1, #8b5cf6)',
-                            borderRadius: '8px 8px 0 0',
-                          }}
-                        />
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>{quarter}</span>
-                      <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{count}</span>
+                {analytics.expiryClusters.map(({ quarter, count }) => (
+                  <div key={quarter} style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ height: 80, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                      <div
+                        style={{
+                          width: '100%',
+                          maxWidth: 40,
+                          height: `${getBarHeightPct(count, maxClusterCount)}%`,
+                          background: 'linear-gradient(180deg, #6366f1, #8b5cf6)',
+                          borderRadius: '8px 8px 0 0',
+                        }}
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <div style={S.analyticsPanel}>
-            <h4 style={S.analyticsPanelTitle}>Next Big Expiry</h4>
-            {!analytics.nextBig ? (
-              <p style={S.analyticsEmpty}>No upcoming expiries.</p>
-            ) : (
-              <div style={{ padding: 16, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: '#1e293b', marginBottom: 4 }}>
-                  {analytics.nextBig.party}
-                </div>
-                <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>{analytics.nextBig.subject}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#6366f1' }}>
-                  Expires: {new Date(analytics.nextBig.expiry).toLocaleDateString()}
-                </div>
-                {analytics.nextBig.annual_value > 0 && (
-                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                    ~${(analytics.nextBig.annual_value / 1000).toFixed(1)}k/year
+                    <Caption1 block>{quarter}</Caption1>
+                    <Text weight="bold" block>{count}</Text>
                   </div>
-                )}
+                ))}
               </div>
             )}
-          </div>
+          </Card>
+          <Card style={{ padding: 16 }}>
+            <Text size={400} weight="semibold" block style={{ marginBottom: 12 }}>Next Big Expiry</Text>
+            {!hasNextBig ? (
+              <Body1 style={{ color: '#64748b' }}>No upcoming expiries.</Body1>
+            ) : (
+              <Card style={{ padding: 16, background: '#f8fafc' }}>
+                <Text size={400} weight="bold" block style={{ marginBottom: 4 }}>{analytics.nextBig.party}</Text>
+                <Caption1 block style={{ marginBottom: 4 }}>{analytics.nextBig.subject}</Caption1>
+                <Text size={400} weight="semibold" style={{ color: '#6366f1' }}>
+                  Expires: {formatExpiryDate(analytics.nextBig.expiry)}
+                </Text>
+                {analytics.nextBig.annual_value > 0 && (
+                  <Caption1 block style={{ marginTop: 4 }}>
+                    ~{formatAnnual(analytics.nextBig.annual_value)}/year
+                  </Caption1>
+                )}
+              </Card>
+            )}
+          </Card>
         </div>
-      </div>
+      </Card>
 
-      {/* 4. Vendor Concentration */}
-      <div style={S.analyticsBlock}>
-        <h3 style={S.analyticsBlockTitle}>Vendor Concentration</h3>
-        <div style={S.analyticsPanel}>
-          <h4 style={S.analyticsPanelTitle}>Top Counterparties</h4>
-          <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>With whom you have the most contracts</p>
-          {analytics.topCounterparties.length === 0 ? (
-            <p style={S.analyticsEmpty}>No contracts yet.</p>
+      {/* Vendor Concentration */}
+      <Card style={{ marginBottom: 24 }}>
+        <Text size={500} weight="semibold" block style={{ marginBottom: 16 }}>Vendor Concentration</Text>
+        <Card style={{ padding: 16 }}>
+          <Text size={400} weight="semibold" block style={{ marginBottom: 4 }}>Top Counterparties</Text>
+          <Caption1 block style={{ color: '#64748b', marginBottom: 12 }}>With whom you have the most contracts</Caption1>
+          {!hasCounterparties ? (
+            <Body1 style={{ color: '#64748b' }}>No contracts yet.</Body1>
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
               <div
@@ -154,39 +204,21 @@ export function AnalyticsPage() {
                   width: 160,
                   height: 160,
                   borderRadius: '50%',
-                  background: (() => {
-                    const colors = [
-                      '#6366f1',
-                      '#8b5cf6',
-                      '#a855f7',
-                      '#d946ef',
-                      '#ec4899',
-                      '#f43f5e',
-                      '#fb923c',
-                      '#eab308',
-                    ];
-                    const parts = analytics.topCounterparties.map((p, i) => {
-                      const start = analytics.topCounterparties.slice(0, i).reduce((s, x) => s + x.pct, 0);
-                      return `${colors[i % colors.length]} ${start}% ${start + p.pct}%`;
-                    });
-                    return `conic-gradient(${parts.join(', ')})`;
-                  })(),
+                  background: getConicGradient(analytics.topCounterparties),
                 }}
               />
-              <ul style={{ ...S.analyticsList, flex: 1, minWidth: 200 }}>
+              <ul style={{ flex: 1, minWidth: 200, margin: 0, paddingLeft: 20, color: '#475569', lineHeight: 1.8 }}>
                 {analytics.topCounterparties.map((p) => (
-                  <li key={p.name} style={S.analyticsListRow}>
-                    <span style={S.analyticsListSubject}>{p.name}</span>
-                    <span style={S.analyticsListCount}>
-                      {p.count} ({p.pct}%)
-                    </span>
+                  <li key={p.name}>
+                    <Text weight="semibold">{p.name}</Text>
+                    <Caption1> {p.count} ({p.pct}%)</Caption1>
                   </li>
                 ))}
               </ul>
             </div>
           )}
-        </div>
-      </div>
+        </Card>
+      </Card>
     </section>
   );
 }

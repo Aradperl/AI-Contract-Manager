@@ -1,21 +1,20 @@
 import uuid
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from config import folders_table
+from deps import get_current_user
 
 router = APIRouter(prefix="/folders", tags=["Folders"])
 
 
 class FolderCreate(BaseModel):
-    user_id: str
     name: str
     color: Optional[str] = "#6366f1"
     symbol: Optional[str] = "📁"
 
 
 class FolderUpdate(BaseModel):
-    user_id: str
     name: Optional[str] = None
     color: Optional[str] = None
     symbol: Optional[str] = None
@@ -23,21 +22,24 @@ class FolderUpdate(BaseModel):
 
 
 @router.get("/")
-async def list_folders(user_id: str):
+async def list_folders(current_user: str = Depends(get_current_user)):
     """List all custom folders for a user."""
     try:
-        res = folders_table.query(KeyConditionExpression="user_id = :uid", ExpressionAttributeValues={":uid": user_id})
+        res = folders_table.query(
+            KeyConditionExpression="user_id = :uid",
+            ExpressionAttributeValues={":uid": current_user},
+        )
         return {"folders": res.get("Items", [])}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/")
-async def create_folder(body: FolderCreate):
+async def create_folder(body: FolderCreate, current_user: str = Depends(get_current_user)):
     """Create a new custom folder."""
     folder_id = str(uuid.uuid4())
     item = {
-        "user_id": body.user_id,
+        "user_id": current_user,
         "folder_id": folder_id,
         "name": (body.name or "").strip() or "New folder",
         "color": (body.color or "#6366f1").strip(),
@@ -52,10 +54,14 @@ async def create_folder(body: FolderCreate):
 
 
 @router.patch("/{folder_id}")
-async def update_folder(folder_id: str, body: FolderUpdate):
+async def update_folder(
+    folder_id: str, body: FolderUpdate, current_user: str = Depends(get_current_user)
+):
     """Update folder name, color, symbol, or contract list."""
     try:
-        existing = folders_table.get_item(Key={"user_id": body.user_id, "folder_id": folder_id})
+        existing = folders_table.get_item(
+            Key={"user_id": current_user, "folder_id": folder_id}
+        )
         item = existing.get("Item")
         if not item:
             raise HTTPException(status_code=404, detail="Folder not found")
@@ -83,14 +89,16 @@ async def update_folder(folder_id: str, body: FolderUpdate):
 
         update_expr = "SET " + ", ".join(updates)
         params = {
-            "Key": {"user_id": body.user_id, "folder_id": folder_id},
+            "Key": {"user_id": current_user, "folder_id": folder_id},
             "UpdateExpression": update_expr,
             "ExpressionAttributeValues": expr_values,
         }
         if expr_names:
             params["ExpressionAttributeNames"] = expr_names
         folders_table.update_item(**params)
-        res = folders_table.get_item(Key={"user_id": body.user_id, "folder_id": folder_id})
+        res = folders_table.get_item(
+            Key={"user_id": current_user, "folder_id": folder_id}
+        )
         return {"folder": res.get("Item")}
     except HTTPException:
         raise
@@ -99,10 +107,14 @@ async def update_folder(folder_id: str, body: FolderUpdate):
 
 
 @router.delete("/{folder_id}")
-async def delete_folder(folder_id: str, user_id: str):
+async def delete_folder(
+    folder_id: str, current_user: str = Depends(get_current_user)
+):
     """Delete a custom folder."""
     try:
-        folders_table.delete_item(Key={"user_id": user_id, "folder_id": folder_id})
+        folders_table.delete_item(
+            Key={"user_id": current_user, "folder_id": folder_id}
+        )
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

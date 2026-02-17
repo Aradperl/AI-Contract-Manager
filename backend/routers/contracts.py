@@ -3,9 +3,10 @@ import os
 import uuid
 import fitz
 from datetime import datetime
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
 from boto3.dynamodb.conditions import Key
 from config import s3_client, contracts_table, users_table
+from deps import get_current_user
 from services.ai_service import call_openai_analysis
 from services.calendar_service import (
     _get_calendar_service,
@@ -28,7 +29,11 @@ router = APIRouter(prefix="/contracts", tags=["Contracts"])
 
 
 @router.post("/upload")
-async def upload_contract(file: UploadFile = File(...), user_id: str = Form(...)):
+async def upload_contract(
+    file: UploadFile = File(...),
+    current_user: str = Depends(get_current_user),
+):
+    user_id = current_user
     try:
         file_bytes = await file.read()
         doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -73,13 +78,14 @@ async def upload_contract(file: UploadFile = File(...), user_id: str = Form(...)
 
 
 @router.get("/")
-async def get_contracts(user_id: str):
-    res = contracts_table.query(KeyConditionExpression=Key('user_id').eq(user_id))
-    return {"contracts": res.get('Items', [])}
+async def get_contracts(current_user: str = Depends(get_current_user)):
+    res = contracts_table.query(KeyConditionExpression=Key("user_id").eq(current_user))
+    return {"contracts": res.get("Items", [])}
 
 
 @router.delete("/{contract_id}")
-async def delete_contract(contract_id: str, user_id: str):
+async def delete_contract(contract_id: str, current_user: str = Depends(get_current_user)):
+    user_id = current_user
     res = contracts_table.get_item(Key={"user_id": user_id, "contract_id": contract_id})
     item = res.get("Item")
     if item:

@@ -119,7 +119,8 @@ cd contract_manager
 cd backend
 python3 -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install fastapi uvicorn boto3 openai python-dotenv pymupdf passlib[bcrypt] google-auth-oauthlib google-api-python-client
+pip install -r requirements.txt
+# or: pip install fastapi uvicorn boto3 openai python-dotenv pymupdf passlib[bcrypt] PyJWT google-auth-oauthlib google-api-python-client
 ```
 
 Create a `.env` in `backend/` with:
@@ -130,6 +131,7 @@ AWS_SECRET_ACCESS_KEY=...
 AWS_REGION=us-east-1
 S3_BUCKET_NAME=...
 OPENAI_API_KEY=...
+JWT_SECRET=...   # optional; use a long random secret in production
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 FRONTEND_URL=http://localhost:5173
@@ -190,8 +192,8 @@ contract_manager/
 
 | Area | Endpoints |
 |------|-----------|
-| **Auth** | `POST /signup`, `POST /login` |
-| **Contracts** | `POST /upload`, `GET /contracts?user_id=`, `GET /view/{id}`, `DELETE /contracts/{id}` |
+| **Auth** | `POST /signup`, `POST /login` (returns JWT). Protected routes require `Authorization: Bearer <token>`. |
+| **Contracts** | `POST /upload`, `GET /contracts`, `GET /view/{id}/pdf`, `DELETE /contracts/{id}` (all require JWT) |
 | **Folders** | `GET/POST/DELETE /folders` (see backend) |
 | **Google** | `GET /auth/google`, `GET /auth/callback`, `GET /check-google-connection`, `POST /update-reminder` |
 
@@ -208,6 +210,7 @@ contract_manager/
 ## 🔒 Security and production
 
 - Do not commit `.env`. Use env vars for all secrets.
+- **JWT**: Set `JWT_SECRET` to a long random value in production (e.g. `openssl rand -hex 32`).
 - Production: set `FRONTEND_URL` and Google redirect to production URLs, use HTTPS, and restrict CORS.
 
 ---

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Card, Body1 } from '@fluentui/react-components';
 import * as S from '../AppStyles';
 
 interface CompactUploadBarProps {
@@ -7,13 +8,13 @@ interface CompactUploadBarProps {
   onFileDrop: (file: File) => void;
 }
 
+function preventDefault(e: React.DragEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
 export function CompactUploadBar({ loading, onUpload, onFileDrop }: CompactUploadBarProps) {
   const [dragActive, setDragActive] = useState(false);
-
-  const preventDefault = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
 
   const handleDragOver = (e: React.DragEvent) => {
     preventDefault(e);
@@ -35,8 +36,10 @@ export function CompactUploadBar({ loading, onUpload, onFileDrop }: CompactUploa
     }
   };
 
+  const labelText = loading ? 'Analyzing…' : 'Add new contract — click or drop PDF here';
+
   return (
-    <div
+    <Card
       style={{
         ...S.uploadArea,
         ...(dragActive ? S.uploadAreaDragActive : {}),
@@ -51,13 +54,22 @@ export function CompactUploadBar({ loading, onUpload, onFileDrop }: CompactUploa
       onDrop={handleDrop}
     >
       {loading && <div className="scanner-line" />}
-      <input type="file" id="compact-file" accept="application/pdf,.pdf" onChange={onUpload} style={{ display: 'none' }} />
-      <label htmlFor="compact-file" style={{ ...S.uploadLabel, flexDirection: 'row', cursor: 'pointer', margin: 0 }}>
-        <div style={{ ...S.iconCircle, width: 44, height: 44, fontSize: 20, marginBottom: 0 }}>{loading ? '⚙️' : '📄'}</div>
-        <span style={{ fontWeight: 600, fontSize: 15 }}>
-          {loading ? 'Analyzing…' : 'Add new contract — click or drop PDF here'}
-        </span>
+      <input
+        type="file"
+        id="compact-file"
+        accept="application/pdf,.pdf"
+        onChange={onUpload}
+        style={{ display: 'none' }}
+      />
+      <label
+        htmlFor="compact-file"
+        style={{ ...S.uploadLabel, flexDirection: 'row', cursor: 'pointer', margin: 0 }}
+      >
+        <div style={{ ...S.iconCircle, width: 44, height: 44, fontSize: 20, marginBottom: 0 }}>
+          {loading ? '⚙️' : '📄'}
+        </div>
+        <Body1 weight="semibold" style={{ fontSize: 15 }}>{labelText}</Body1>
       </label>
-    </div>
+    </Card>
   );
 }

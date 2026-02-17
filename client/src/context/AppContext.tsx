@@ -30,7 +30,7 @@ export interface AppContextValue {
   setSearchTerm: (v: string) => void;
   sortBy: 'timestamp' | 'alphabetical' | 'expiry';
   setSortBy: (v: 'timestamp' | 'alphabetical' | 'expiry') => void;
-  loadUserData: (uid: string) => Promise<void>;
+  loadUserData: () => Promise<void>;
   handleUploadFile: (file: File) => Promise<void>;
   handleUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleDeleteContract: (id: string) => void;

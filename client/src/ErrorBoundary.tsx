@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { Title1, Body1, Button } from '@fluentui/react-components';
 
 interface Props {
   children: ReactNode;
@@ -27,30 +28,23 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '40px', fontFamily: 'sans-serif', textAlign: 'center' }}>
-          <h1 style={{ color: '#d32f2f' }}>Something went wrong</h1>
-          <p style={{ color: '#666', marginBottom: '20px' }}>
+        <div style={{ padding: 40, fontFamily: 'sans-serif', textAlign: 'center' }}>
+          <Title1 block style={{ color: '#d32f2f', marginBottom: 16 }}>Something went wrong</Title1>
+          <Body1 block style={{ color: '#666', marginBottom: 20 }}>
             {this.state.error?.message || 'An unexpected error occurred'}
-          </p>
-          <button
+          </Body1>
+          <Button
+            appearance="primary"
             onClick={() => {
               this.setState({ hasError: false, error: null });
               window.location.reload();
             }}
-            style={{
-              padding: '10px 20px',
-              background: '#007aff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-            }}
           >
             Reload Page
-          </button>
-          <details style={{ marginTop: '20px', textAlign: 'left' }}>
-            <summary style={{ cursor: 'pointer', color: '#007aff' }}>Error Details</summary>
-            <pre style={{ background: '#f5f5f5', padding: '10px', borderRadius: '4px', overflow: 'auto' }}>
+          </Button>
+          <details style={{ marginTop: 20, textAlign: 'left' }}>
+            <summary style={{ cursor: 'pointer', color: '#6366f1' }}>Error Details</summary>
+            <pre style={{ background: '#f5f5f5', padding: 10, borderRadius: 4, overflow: 'auto' }}>
               {this.state.error?.stack}
             </pre>
           </details>
@@ -63,4 +57,3 @@ class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
-

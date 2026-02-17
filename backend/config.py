@@ -24,6 +24,11 @@ folders_table = dynamodb.Table('Contract_Folders')
 ai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# JWT
+JWT_SECRET = os.getenv("JWT_SECRET", "change-me-in-production-use-long-secret")
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+
 # Google Config
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")

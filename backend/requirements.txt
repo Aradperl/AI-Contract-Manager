@@ -5,6 +5,7 @@ openai
 python-dotenv
 pymupdf
 passlib[bcrypt]
+PyJWT
 google-auth-oauthlib
 google-api-python-client
 

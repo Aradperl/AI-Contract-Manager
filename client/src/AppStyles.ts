@@ -110,18 +110,19 @@ const headingFont = '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, san
 
 export const heroSection: React.CSSProperties = {
     textAlign: 'center',
-    maxWidth: '800px',
-    margin: '0 auto 48px auto'
+    maxWidth: '900px',
+    margin: '0 auto 56px auto',
+    paddingTop: '8px'
 };
 
 export const heroTitle: React.CSSProperties = {
     fontFamily: headingFont,
-    fontSize: 'clamp(32px, 5vw, 44px)',
+    fontSize: 'clamp(40px, 6vw, 56px)',
     fontWeight: '800',
     color: '#0f172a',
-    marginBottom: '12px',
+    marginBottom: '16px',
     letterSpacing: '-0.03em',
-    lineHeight: 1.2
+    lineHeight: 1.15
 };
 
 export const gradientText: React.CSSProperties = {
@@ -134,9 +135,9 @@ export const gradientText: React.CSSProperties = {
 
 export const heroSub: React.CSSProperties = {
     fontFamily: headingFont,
-    fontSize: '17px',
+    fontSize: 'clamp(18px, 2vw, 22px)',
     color: '#64748b',
-    lineHeight: 1.55,
+    lineHeight: 1.5,
     fontWeight: '500'
 };
 
@@ -332,6 +333,7 @@ export const cardStyle: React.CSSProperties = {
     borderRadius: '20px',
     padding: '24px',
     border: '1px solid #e2e8f0',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
     transition: 'all 0.3s ease',
     display: 'flex',
     flexDirection: 'column'
@@ -683,11 +685,15 @@ export const authFeatures: React.CSSProperties = {
 
 export const authFeaturePill: React.CSSProperties = {
     fontSize: '12px',
-    color: '#64748b',
-    fontWeight: '500',
-    display: 'flex',
+    color: '#6366f1',
+    fontWeight: '600',
+    display: 'inline-flex',
     alignItems: 'center',
-    gap: '6px'
+    gap: '6px',
+    padding: '8px 14px',
+    borderRadius: '20px',
+    background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)',
+    border: '1px solid #c7d2fe'
 };
 
 // Signup success overlay & card

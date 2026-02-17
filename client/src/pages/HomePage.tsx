@@ -1,7 +1,32 @@
 import { Link } from 'react-router-dom';
+import { Card, Text, Subtitle1, Body1, Caption1 } from '@fluentui/react-components';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { useApp } from '../context/AppContext';
-import * as S from '../AppStyles';
+import type { ContractItem } from '../context/AppContext';
+
+// --- Helper: extract party from contract analysis
+function getContractParty(contract: ContractItem): string {
+  if (typeof contract.analysis !== 'object' || !contract.analysis || !('party' in contract.analysis)) {
+    return 'Contract';
+  }
+  const party = (contract.analysis as { party?: string }).party;
+  return (party && String(party).trim()) || 'Contract';
+}
+
+// --- Helper: extract summary (subject or filename), capped length
+function getContractSummary(contract: ContractItem, maxLength = 80): string {
+  if (typeof contract.analysis === 'object' && contract.analysis && 'subject' in contract.analysis) {
+    const subject = (contract.analysis as { subject?: string }).subject;
+    const text = String(subject ?? contract.filename);
+    return text.slice(0, maxLength) + (text.length > maxLength ? '…' : '');
+  }
+  return contract.filename;
+}
+
+// --- Helper: format annual value for display
+function formatAnnual(value: number): string {
+  return `$${(value / 1000).toFixed(1)}k`;
+}
 
 export function HomePage() {
   const {
@@ -11,10 +36,12 @@ export function HomePage() {
     handleUpload,
     handleUploadFile,
   } = useApp();
-  const recent = filteredAndSortedHistory.slice(0, 3);
+
+  const recentContracts = filteredAndSortedHistory.slice(0, 3);
+  const hasContracts = recentContracts.length > 0;
 
   return (
-    <div>
+    <>
       <DashboardHeader
         loading={loading}
         onUpload={handleUpload}
@@ -23,27 +50,23 @@ export function HomePage() {
       />
 
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
-          Quick overview
-        </h2>
-        <p style={{ fontSize: 15, color: '#64748b' }}>
-          Your contract portfolio at a glance.
-        </p>
+        <Subtitle1 block style={{ marginBottom: 4 }}>Quick overview</Subtitle1>
+        <Body1 block style={{ color: '#64748b' }}>Your contract portfolio at a glance.</Body1>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 20, marginBottom: 40 }}>
-        <div style={S.analyticsCard}>
-          <span style={S.analyticsCardValue}>{analytics.totalContracts}</span>
-          <span style={S.analyticsCardLabel}>Total contracts</span>
-        </div>
-        <div style={S.analyticsCard}>
-          <span style={S.analyticsCardValue}>${(analytics.totalAnnual / 1000).toFixed(1)}k</span>
-          <span style={S.analyticsCardLabel}>Annual liability</span>
-        </div>
-        <div style={S.analyticsCard}>
-          <span style={S.analyticsCardValue}>{analytics.autoRenewalCount}</span>
-          <span style={S.analyticsCardLabel}>Auto-renewals</span>
-        </div>
+        <Card>
+          <Text size={500} weight="semibold" block>{analytics.totalContracts}</Text>
+          <Caption1 block style={{ color: '#64748b' }}>Total contracts</Caption1>
+        </Card>
+        <Card>
+          <Text size={500} weight="semibold" block>{formatAnnual(analytics.totalAnnual)}</Text>
+          <Caption1 block style={{ color: '#64748b' }}>Annual liability</Caption1>
+        </Card>
+        <Card>
+          <Text size={500} weight="semibold" block>{analytics.autoRenewalCount}</Text>
+          <Caption1 block style={{ color: '#64748b' }}>Auto-renewals</Caption1>
+        </Card>
       </div>
 
       <div style={{ display: 'flex', gap: 16, marginBottom: 32, flexWrap: 'wrap' }}>
@@ -80,46 +103,37 @@ export function HomePage() {
       </div>
 
       <section>
-        <div style={S.sectionHeader}>
-          <h2 style={S.sectionTitle}>Recent contracts</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Subtitle1 block>Recent contracts</Subtitle1>
           {filteredAndSortedHistory.length > 0 && (
-            <Link to="/contracts" style={{ ...S.countTag, textDecoration: 'none' }}>
+            <Link to="/contracts" style={{ fontSize: 14, color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>
               View all ({filteredAndSortedHistory.length})
             </Link>
           )}
         </div>
-        {recent.length === 0 ? (
-          <p style={{ color: '#64748b', fontSize: 15 }}>
-            No contracts yet. <Link to="/contracts" style={{ color: '#6366f1', fontWeight: 600 }}>Upload your first PDF</Link> to get started.
-          </p>
+
+        {!hasContracts ? (
+          <Body1 style={{ color: '#64748b' }}>
+            No contracts yet.{' '}
+            <Link to="/contracts" style={{ color: '#6366f1', fontWeight: 600 }}>Upload your first PDF</Link> to get started.
+          </Body1>
         ) : (
-          <div style={S.cardGrid}>
-            {recent.map((c) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+            {recentContracts.map((c) => (
               <Link
                 key={c.contract_id}
                 to="/contracts"
-                style={{
-                  ...S.cardStyle,
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  cursor: 'pointer',
-                }}
+                style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
               >
-                <div style={S.cardParty}>
-                  {(typeof c.analysis === 'object' && c.analysis && 'party' in c.analysis
-                    ? (c.analysis as { party?: string }).party
-                    : 'Contract') || 'Contract'}
-                </div>
-                <div style={S.cardSummary}>
-                  {typeof c.analysis === 'object' && c.analysis && 'subject' in c.analysis
-                    ? String((c.analysis as { subject?: string }).subject || c.filename).slice(0, 80)
-                    : c.filename}
-                </div>
+                <Card style={{ height: '100%' }}>
+                  <Subtitle1 block style={{ marginBottom: 4 }}>{getContractParty(c)}</Subtitle1>
+                  <Caption1 block style={{ color: '#64748b' }}>{getContractSummary(c)}</Caption1>
+                </Card>
               </Link>
             ))}
           </div>
         )}
       </section>
-    </div>
+    </>
   );
 }
