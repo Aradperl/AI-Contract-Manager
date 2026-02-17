@@ -34,7 +34,7 @@
 
 ### 🏠 Home
 
-The **Home** page is the landing view after login. It shows a hero line (“Your Contracts, Simplified”), a drag-and-drop upload area for PDFs, a quick overview (total contracts, annual liability, auto-renewals), and a “Recent contracts” list. Users can upload a contract here and jump to Contracts or Analytics.
+The **Home** page is the landing view after login. A **centered hero** at the top displays the main headline (“Your Contracts, Simplified.”) and subtitle, with a large drag-and-drop upload area for PDFs directly below. Under that are a quick overview (total contracts, annual liability, auto-renewals), action buttons (Upload contract, View analytics), and a “Recent contracts” list. Users can upload a contract here and jump to Contracts or Analytics.
 
 ### 📄 Contracts page
 
@@ -50,7 +50,7 @@ A **fixed sidebar** offers: Home, Contracts, Analytics, then a scrollable **Rece
 
 ### 🔐 Login
 
-The **Login / Sign up** screen is shown when the user is not authenticated. It includes a simple form (username, and email for signup), “Welcome back” / “Create your account” copy, and primary action buttons. No app features are available until the user signs in.
+The **Login / Sign up** screen is the first thing visitors see when not authenticated. A centered card shows the LegalVault logo, “Welcome back” / “Create your account” headline, a short subtitle, and a form (username, password; email for signup). A gradient “Sign in” / “Sign up” button and a toggle link (“Don’t have an account? Sign up”) complete the flow. Feature chips at the bottom (AI analysis, Secure storage, Reminders) summarize the product. After sign-in, the client receives a JWT and uses it for all API requests; no app features are available until the user is signed in.
 
 ### ⚙️ Settings page
 
@@ -77,6 +77,7 @@ When the user connects **Google Calendar**, expiration reminders can be created 
 - **⚠️ Signing and risk** — “Not signed” detection and red-flag labels on cards and in filters.
 - **📅 Google Calendar** — Connect account and set per-contract reminders (e.g. 1 week / 1 month before expiry); events appear in the user’s calendar as in the screenshot.
 - **📧 Automated email reminders** — **AWS EventBridge** runs every morning at 8:00 and triggers **AWS Lambda**, which uses **AWS SES** to send the user an email one week before a contract expires.
+- **🔐 JWT authentication** — Login returns an access token; the client sends `Authorization: Bearer <token>` on all protected requests. Session is validated server-side; no features until signed in.
 - **🔐 Secure storage** — PDFs in AWS S3; metadata and user data in DynamoDB.
 - **🖥️ Multi-page UI** — Home, Contracts, Analytics, Settings, About with React Router and a consistent sidebar.
 
@@ -86,8 +87,8 @@ When the user connects **Google Calendar**, expiration reminders can be created 
 
 | Layer | Technologies |
 |-------|--------------|
-| **Frontend** | React 19, TypeScript, Vite, React Router, Axios |
-| **Backend** | Python 3.9+, FastAPI, Uvicorn, PyMuPDF (PDF text extraction) |
+| **Frontend** | React 19, TypeScript, Vite, React Router, Fluent UI (React components), Axios |
+| **Backend** | Python 3.9+, FastAPI, Uvicorn, PyJWT, PyMuPDF (PDF text extraction) |
 | **AI & data** | OpenAI GPT-4o-mini, AWS DynamoDB, AWS S3, AWS Lambda, AWS SES, AWS EventBridge |
 | **Integrations** | Google Calendar API, Google OAuth 2.0 |
 
@@ -168,21 +169,26 @@ cd client && npm install && npm run dev
 ```
 contract_manager/
 ├── backend/
-│   ├── main.py              # FastAPI app, CORS, routes
-│   ├── config.py            # Env / settings
-│   ├── routers/             # contracts, folders, google_auth
-│   ├── services/            # AI analysis, etc.
-│   └── FOLDERS_TABLE.md     # DynamoDB folders schema
+│   ├── main.py              # FastAPI app, CORS, /view/{id}/pdf, /update-reminder
+│   ├── config.py            # AWS, OpenAI, JWT and auth config
+│   ├── deps.py               # JWT dependency (get_current_user)
+│   ├── models.py             # Pydantic models
+│   ├── routers/              # auth (signup, login, check-google), contracts, folders, google_auth
+│   ├── services/             # ai_service, auth_service (password + JWT), calendar_service
+│   └── FOLDERS_TABLE.md      # DynamoDB folders schema
 ├── client/
 │   ├── src/
-│   │   ├── App.tsx          # Auth, context, modals, routes
-│   │   ├── layouts/         # AppLayout (sidebar + Outlet)
-│   │   ├── pages/           # Home, Contracts, Analytics, Settings, About
-│   │   ├── components/      # Navbar, ContractCard, CompactUploadBar, etc.
-│   │   ├── context/         # AppContext
-│   │   └── apiService.ts
+│   │   ├── main.tsx          # React root, FluentProvider, BrowserRouter
+│   │   ├── App.tsx           # Auth (login/signup), context, modals, routes
+│   │   ├── AppStyles.ts      # Shared styles (hero, cards, auth, etc.)
+│   │   ├── apiService.ts     # API client, JWT (getToken, setAuth, Bearer header)
+│   │   ├── layouts/          # AppLayout (Navbar, sidebar, Outlet)
+│   │   ├── pages/            # Home, Contracts, Analytics, Settings, About
+│   │   ├── components/       # Navbar, ContractCard, DashboardHeader, CompactUploadBar, etc.
+│   │   ├── context/          # AppContext
+│   │   └── utils/            # contractHelpers
 │   └── package.json
-├── screenshots/            
+├── screenshots/
 └── README.md
 ```
 
